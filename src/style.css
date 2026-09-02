@@ -49,36 +49,7 @@ header p { margin: 0; color: var(--muted); font-size: 13px; }
 @media (max-width: 820px) {
   .grid { grid-template-columns: 1fr; }
 
-  html, body { height: 100%; overscroll-behavior: none; }
-  body { padding: 0; overflow: hidden; }
-
-  .wrap {
-    max-width: 100%;
-    margin: 0;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Setup section (upload + proses) collapses after a photo is processed,
-     so the preview + koreksi sliders can stay on one screen. */
-  .setup-panel {
-    flex-shrink: 0;
-    overflow: hidden;
-    max-height: 2000px;
-    opacity: 1;
-    padding: 16px 16px 0 16px;
-    transition: max-height .25s ease, opacity .2s ease, padding .25s ease;
-  }
-  .setup-panel.collapsed {
-    max-height: 0;
-    opacity: 0;
-    padding: 0 16px;
-    pointer-events: none;
-  }
-
-  .setup-collapsed-bar { display: none; flex-shrink: 0; padding: 10px 16px 0 16px; }
+  .setup-collapsed-bar { display: none; padding: 10px 16px 0 16px; }
   .setup-collapsed-bar.show { display: block; }
   .setup-toggle-btn {
     width: 100%;
@@ -86,21 +57,56 @@ header p { margin: 0; color: var(--muted); font-size: 13px; }
     padding: 9px 12px;
   }
 
-  /* editor-row jadi flex-container penuh sisa tinggi layar di mobile,
-     supaya preview-fixed (child) tetap ringkas & controls-scroll (child) bisa scroll */
-  .editor-row {
+  .setup-panel { padding: 16px 16px 0 16px; }
+
+  /* Mode editor (aktif lewat class body.editor-mode, dipasang JS setelah foto
+     diproses) — BARU di sini halaman dikunci 1-layar dengan preview fixed di
+     atas & slider scroll sendiri. Sebelum diproses, halaman scroll normal,
+     supaya kotak upload yang tinggi tidak "menelan" layar HP. */
+  body.editor-mode {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    padding: 0;
+  }
+  body.editor-mode .wrap {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  body.editor-mode .setup-panel {
+    flex-shrink: 0;
+    overflow: hidden;
+    max-height: 2000px;
+    opacity: 1;
+    transition: max-height .25s ease, opacity .2s ease, padding .25s ease;
+  }
+  body.editor-mode .setup-panel.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 16px;
+    pointer-events: none;
+  }
+  /* Kalau user buka lagi setup-panel selagi masih di editor-mode (ganti foto),
+     batasi tingginya + kasih scroll sendiri — jangan sampai makan semua layar lagi. */
+  body.editor-mode .setup-panel:not(.collapsed) {
+    max-height: 48vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.editor-mode .editor-row {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  /* Preview stays fixed height at the top, always visible while sliders scroll */
-  .preview-fixed { flex-shrink: 0; padding: 12px 16px 0 16px; }
-  .preview-box { min-height: 0; }
-  .preview-box canvas { max-height: 34vh; }
+  body.editor-mode .preview-fixed { flex-shrink: 0; padding: 12px 16px 0 16px; }
+  body.editor-mode .preview-box { min-height: 0; }
+  body.editor-mode .preview-box canvas { max-height: 34vh; }
 
-  .controls-scroll {
+  body.editor-mode .controls-scroll {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;

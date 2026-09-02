@@ -421,6 +421,7 @@ function resetAfterNewInput(): void {
   [els.btnCube, els.btnXmp, els.btnLook, els.btnVlt, els.btnFcp, els.btnHald, els.btnJpg, els.btnSavePreset, els.btnBlink].forEach(b => b.disabled = true);
   els.scopesPanel.style.display = 'none';
   setSetupCollapsed(false);
+  setEditorMode(false);
   updateCopyPasteButtons();
 }
 
@@ -441,6 +442,7 @@ els.btnProcess.addEventListener('click', async () => {
     els.btnBlink.disabled = false;
     els.scopesPanel.style.display = 'flex';
     setSetupCollapsed(true);
+    setEditorMode(true);
     updateCopyPasteButtons();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -543,6 +545,7 @@ async function selectBatchPhoto(index: number): Promise<void> {
   highlightActiveThumbnail(index);
   updateUndoRedoButtons();
   setSetupCollapsed(true);
+  setEditorMode(true);
   updateCopyPasteButtons();
   await renderPreview();
 }
@@ -875,6 +878,13 @@ function setSetupCollapsed(collapsed: boolean): void {
   els.btnToggleSetup.setAttribute('aria-expanded', String(!collapsed));
 }
 els.btnToggleSetup.addEventListener('click', () => setSetupCollapsed(false));
+
+// Mode "editor" (halaman terkunci 1-layar, preview fixed + slider scroll sendiri)
+// baru aktif setelah ada foto yang berhasil diproses — sebelum itu halaman
+// scroll normal supaya kotak upload yang tinggi tidak menutupi apapun di HP.
+function setEditorMode(active: boolean): void {
+  document.body.classList.toggle('editor-mode', active);
+}
 
 window.addEventListener('resize', () => {
   if (renderer && state.hasProcessed) updateDividerPosition(renderer.getCanvas());
