@@ -1,12 +1,28 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  server: {
-    port: 5173,
-    host: true
-  },
-  build: {
-    target: 'es2020',
-    outDir: 'dist'
-  }
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'Quest AI',
+        short_name: 'QuestAI',
+        description: 'Turn your deadlines into epic quests',
+        theme_color: '#0f0f0f',
+        background_color: '#0f0f0f',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      }
+    })
+  ]
 })
