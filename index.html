@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#141312">
+<title>Color Grade Transfer</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="setup-panel" id="setupPanel">
+    <header>
+      <h1>Color Grade <span>Transfer</span></h1>
+      <p>Ambil warna dari foto referensi, terapkan ke foto mentahmu. Export ke .cube, .xmp, .look, .vlt, .xml, HALD.</p>
+    </header>
+
+    <div class="grid">
+      <div>
+        <div class="drop" id="dropSample" role="button" tabindex="0" aria-label="Upload foto sample" onclick="document.getElementById('fileSample').click()">
+          <div class="label">Sample (sudah digrading)</div>
+          <div class="drop-content" id="dropSampleContent">
+            <div class="hint"><b>Upload foto referensi</b>klik atau drag di sini</div>
+          </div>
+          <input type="file" id="fileSample" accept="image/*" aria-label="Pilih file sample">
+        </div>
+      </div>
+      <div>
+        <div class="drop" id="dropTarget" role="button" tabindex="0" aria-label="Upload foto target" onclick="document.getElementById('fileTarget').click()">
+          <div class="label">Target (mentah)</div>
+          <div class="drop-content" id="dropTargetContent">
+            <div class="hint"><b>Upload foto mentahmu</b>JPEG/TIFF flat, klik atau drag di sini</div>
+          </div>
+          <input type="file" id="fileTarget" accept="image/*" multiple aria-label="Pilih file target">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:16px;">
+      <button class="primary" id="btnProcess" disabled>Proses Warna</button>
+      <button id="btnBatchProcess" disabled style="display:none;">Proses Batch</button>
+      <button id="btnBlink" disabled aria-label="Tahan untuk melihat foto original">Tahan Original (Shift)</button>
+    </div>
+  </div>
+
+  <div class="setup-collapsed-bar" id="setupCollapsedBar">
+    <button id="btnToggleSetup" class="setup-toggle-btn" aria-expanded="false">📁 Ganti foto sample / target</button>
+  </div>
+
+  <div class="editor-row" id="editorRow">
+  <div class="preview-fixed" id="previewFixed">
+    <div class="preview-wrap">
+      <div class="preview-toolbar">
+        <div class="zoom-controls">
+          <button id="btnZoomOut" aria-label="Zoom out">−</button>
+          <span id="zoomLabel">100%</span>
+          <button id="btnZoomIn" aria-label="Zoom in">+</button>
+          <button id="btnZoomReset" aria-label="Reset zoom">Reset</button>
+        </div>
+        <div class="split-toggle">
+          <button id="btnSplitToggle" aria-pressed="false" aria-label="Toggle before after split">Before / After</button>
+        </div>
+      </div>
+      <div class="preview-box" id="previewBox">
+        <div class="empty">Upload foto sample & target, lalu tekan "Proses Warna" untuk melihat hasilnya</div>
+        <div class="split-divider" id="splitDivider">
+          <div class="handle" id="splitHandle">⇔</div>
+        </div>
+        <span class="split-label before" id="labelBefore">Before</span>
+        <span class="split-label after" id="labelAfter">After</span>
+      </div>
+      <div class="color-tooltip" id="colorTooltip" style="display:none;"></div>
+    </div>
+    <div id="mismatchWarning" style="display:none;" class="note" role="alert"></div>
+
+    <div class="panel filmstrip-panel" id="batchGalleryPanel" style="display:none;">
+      <div class="filmstrip-header">
+        <h2>Batch <span id="filmstripCount"></span></h2>
+        <div class="btn-row">
+          <button class="primary" id="btnDownloadAll">Download Semua (ZIP)</button>
+          <button id="btnClearGallery">Bersihkan</button>
+        </div>
+      </div>
+      <div class="batch-gallery" id="batchGallery"></div>
+    </div>
+  </div>
+
+  <div class="controls-scroll" id="controlsScroll">
+
+  <div class="scopes-panel" id="scopesPanel" style="display:none;">
+    <div class="scope-box">
+      <canvas id="histogramCanvas" width="280" height="120" aria-label="Histogram RGB"></canvas>
+      <span class="scope-label">Histogram</span>
+    </div>
+    <div class="scope-box">
+      <canvas id="vectorscopeCanvas" width="120" height="120" aria-label="Vectorscope"></canvas>
+      <span class="scope-label">Vectorscope</span>
+    </div>
+    <div class="scope-box">
+      <canvas id="waveformCanvas" width="280" height="120" aria-label="Waveform"></canvas>
+      <span class="scope-label">Waveform</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Koreksi</h2>
+    <div class="slider-row">
+      <div class="top"><span>Kekuatan Tone</span><span class="val" id="v-strengthTone">100%</span></div>
+      <input type="range" id="s-strengthTone" min="0" max="100" value="100" aria-label="Kekuatan tone">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Kekuatan Warna</span><span class="val" id="v-strengthColor">60%</span></div>
+      <input type="range" id="s-strengthColor" min="0" max="100" value="60" aria-label="Kekuatan warna">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Exposure</span><span class="val" id="v-exposure">0.00 EV</span></div>
+      <input type="range" id="s-exposure" min="-200" max="200" value="0" aria-label="Exposure">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Contrast</span><span class="val" id="v-contrast">0</span></div>
+      <input type="range" id="s-contrast" min="-50" max="50" value="0" aria-label="Contrast">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Temperature</span><span class="val" id="v-temp">0</span></div>
+      <input type="range" id="s-temp" min="-50" max="50" value="0" aria-label="Temperature">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Tint</span><span class="val" id="v-tint">0</span></div>
+      <input type="range" id="s-tint" min="-50" max="50" value="0" aria-label="Tint">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Saturation</span><span class="val" id="v-saturation">0</span></div>
+      <input type="range" id="s-saturation" min="-50" max="50" value="0" aria-label="Saturation">
+    </div>
+
+    <h2 style="margin-top:20px;">Proteksi Warna</h2>
+    <div class="slider-row">
+      <div class="top"><span>Hue Protect Range</span><span class="val" id="v-hueProtect">Off</span></div>
+      <input type="range" id="s-hueProtectLow" min="0" max="360" value="0" aria-label="Hue protect low">
+      <input type="range" id="s-hueProtectHigh" min="0" max="360" value="0" aria-label="Hue protect high">
+    </div>
+    <div class="slider-row">
+      <div class="top"><span>Protect Strength</span><span class="val" id="v-hueProtectStrength">0%</span></div>
+      <input type="range" id="s-hueProtectStrength" min="0" max="100" value="0" aria-label="Protect strength">
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button id="btnResetKoreksi">Reset Koreksi</button>
+      <button id="btnUndo" disabled aria-label="Undo">↩ Undo</button>
+      <button id="btnRedo" disabled aria-label="Redo">Redo ↪</button>
+    </div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button id="btnCopySettings" disabled title="Salin semua pengaturan slider foto ini">Copy Pengaturan</button>
+      <button id="btnPasteSettings" disabled title="Tempel pengaturan yang sudah di-copy ke foto ini">Paste Pengaturan</button>
+      <button id="btnPasteAllSettings" disabled style="display:none;" title="Terapkan pengaturan yang sudah di-copy ke semua foto batch">Terapkan ke Semua Batch</button>
+    </div>
+    <div id="copyStatus" class="hint" style="min-height:16px;margin-top:6px;font-size:11px;color:var(--muted);"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Export</h2>
+    <div class="btn-row">
+      <button class="primary" id="btnCube" disabled>.cube</button>
+      <button class="primary" id="btnXmp" disabled>.xmp</button>
+      <button class="primary" id="btnLook" disabled>.look</button>
+      <button class="primary" id="btnVlt" disabled>.vlt</button>
+      <button class="primary" id="btnFcp" disabled>.xml</button>
+      <button class="primary" id="btnHald" disabled>HALD</button>
+      <button class="primary" id="btnJpg" disabled>Download JPG</button>
+    </div>
+    <div class="status" id="exportStatus"></div>
+    <div class="note">
+      .cube = LUT akurat. .xmp = taksiran Lightroom. .look = Adobe SpeedGrade.
+      .vlt = DaVinci Resolve. .xml = Final Cut Pro. HALD = PNG untuk Photoshop/GIMP.
+      JPG = Hasil grading langsung siap pakai.
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Preset tersimpan</h2>
+    <div class="preset-save-row">
+      <input type="text" id="presetName" placeholder="Nama preset, misalnya 'Warm Editorial'" aria-label="Nama preset">
+      <button id="btnSavePreset" disabled>Simpan preset</button>
+    </div>
+    <div class="preset-list" id="presetList"></div>
+    <div class="note">
+      Preset menyimpan "resep" warna dari foto sample plus nilai slider.
+    </div>
+  </div>
+
+  <div class="panel" id="debugPanel">
+    <h2>Debug Log</h2>
+    <div id="debugLog" style="font-family:var(--mono);font-size:11px;color:var(--muted);white-space:pre-wrap;max-height:180px;overflow-y:auto;line-height:1.6;">Menunggu aktivitas...</div>
+  </div>
+  </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="renameModalOverlay">
+  <div class="modal-box">
+    <h3 id="renameModalTitle">Simpan File</h3>
+    <p class="modal-hint">Kasih nama file sebelum diunduh.</p>
+    <div class="modal-input-row">
+      <input type="text" id="renameModalInput" maxlength="80" autocomplete="off" aria-label="Nama file">
+      <span class="modal-ext" id="renameModalExt">.cube</span>
+    </div>
+    <div class="modal-btn-row">
+      <button id="renameModalCancel">Batal</button>
+      <button class="primary" id="renameModalConfirm">Download</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+
+</body>
+</html>
