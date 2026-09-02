@@ -1,5 +1,5 @@
-import type { ImageStats, Mat3, SliderState, Preset, WorkerResponse } from './types';
-import { createState, updateMKL, defaultSliders, loadPresets, savePresets, pushUndo, undo, redo } from './state';
+import type { SliderState, Preset, WorkerResponse } from './types';
+import { createState, updateMKL, defaultSliders, savePresets, pushUndo, undo, redo } from './state';
 import { WebGLRenderer } from './webgl';
 import { generateCube } from './export/cube';
 import { generateXmp } from './export/xmp';
@@ -24,7 +24,6 @@ let batchFiles: File[] = [];
 let targetFile: File | null = null;
 let activeBatchIndex = -1;
 const MIN_EXPORT_LONG_EDGE = 1200;
-let isReprocessing = false;
 let renderer: WebGLRenderer | null = null;
 let worker: Worker | null = null;
 let workerId = 0;

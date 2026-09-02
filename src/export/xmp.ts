@@ -25,12 +25,13 @@ export function estimateXmpParams(
 
   let splitTone: { shadowHue: number; shadowSat: number; highlightHue: number; highlightSat: number } | null = null;
   if (mklA) {
+    const mklMat = mklA; // narrow inside a const so the nested closure below keeps the non-null type
     const shadowL = targetStats.meanL - targetStats.stdL;
     const highlightL = targetStats.meanL + targetStats.stdL;
 
     function colorPushAt(Lval: number): { a: number; b: number } {
       const dx: [number, number, number] = [Lval - targetStats.meanL, 0, 0];
-      const mapped = matVec(mklA, dx);
+      const mapped = matVec(mklMat, dx);
       return { a: mapped[1] * strengthColorF, b: mapped[2] * strengthColorF };
     }
 

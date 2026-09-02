@@ -2,6 +2,15 @@ import type { WorkerRequest, WorkerResponse, ImageStats, Mat3, SliderState } fro
 import { rgb2lab, lab2rgb, clamp } from './colorSpace';
 import { matVec } from './mkl';
 
+// tsconfig.json (satu file untuk seluruh project) pakai lib "DOM", bukan "WebWorker",
+// jadi tipe bawaan `self.postMessage` di sini kebaca sebagai Window.postMessage (butuh
+// targetOrigin) — bukan tanda ada bug, cuma typing worker yang kurang tepat.
+// Wrapper kecil ini kasih tipe yang benar tanpa perlu ubah lib global (yang bisa
+// bikin konflik tipe DOM di file lain seperti ui.ts).
+function workerPostMessage(message: WorkerResponse, transfer?: Transferable[]): void {
+  (self as unknown as { postMessage: (message: unknown, transfer?: Transferable[]) => void }).postMessage(message, transfer);
+}
+
 function computeStats(imageData: ImageData): ImageStats {
   const d = imageData.data;
   let sumL = 0, sumA = 0, sumB = 0, n = 0;
@@ -135,11 +144,11 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     if (type === 'computeStats' && payload.imageData) {
       const result = computeStats(payload.imageData);
       const res: WorkerResponse = { id, type: 'computeStats', result };
-      self.postMessage(res, [payload.imageData.data.buffer]);
+      workerPostMessage(res, [payload.imageData.data.buffer]);
     } else if (type === 'transformImage' && payload.targetData && payload.sampleStats && payload.targetStats && payload.mklA && payload.sliders) {
       const imageData = transformImage(payload.targetData, payload.sampleStats, payload.targetStats, payload.mklA, payload.sliders);
       const res: WorkerResponse = { id, type: 'transformImage', imageData };
-      self.postMessage(res, [imageData.data.buffer]);
+      workerPostMessage(res, [imageData.data.buffer]);
     } else if (type === 'batchTransform') {
       const targets = payload.batchTargets;
       const sStats = payload.sampleStats;
@@ -161,13 +170,13 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
         out.push(transformImage(t, sStats, tStats, mkl, slid));
       }
       const res: WorkerResponse = { id, type: 'batchTransform', batchResults: out };
-      self.postMessage(res, out.map(x => x.data.buffer) as ArrayBuffer[]);
+      workerPostMessage(res, out.map(x => x.data.buffer) as ArrayBuffer[]);
     } else {
       throw new Error('Invalid request');
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     const res: WorkerResponse = { id, type, error: msg };
-    self.postMessage(res);
+    workerPostMessage(res);
   }
 };

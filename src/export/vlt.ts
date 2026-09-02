@@ -3,7 +3,7 @@ import type { ImageStats, Mat3, SliderState } from '../types';
 export function generateVlt(
   sampleStats: ImageStats,
   targetStats: ImageStats,
-  mklA: Mat3 | null,
+  _mklA: Mat3 | null,
   sliders: SliderState
 ): string {
   const exp = ((sampleStats.meanL - targetStats.meanL) / 50 * (sliders.strengthTone / 100) + sliders.exposure / 100).toFixed(3);
